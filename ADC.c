@@ -7,6 +7,7 @@
 #include "ADC.h"
 
 volatile uint8_t overflow;
+volatile uint8_t count;
 volatile int avg_Read;
 
 // Set up Serial 19200, and 8N1
@@ -24,15 +25,20 @@ int main(void)
 	ADR_setup();
     while(1)
     {
-		if (tot_overflow >= 4)
+		if (overflow >= 4)
 		{
 			if (TCNT0 >=226)
 			{
 				avg_Read = ADC_read(0, 10, true);
 				unsigned int value = avg_Read;
-				calc_ADR(value);
+				count++;
+				if (count == 5)
+				{
+					calc_ADR(value);
+					count = 0;
+				}
 				TCNT0 = 0;
-				tot_overflow = 0;
+				overflow = 0;
 				avg_Read = 0;
 			}
 		}
@@ -54,7 +60,7 @@ void timer0_init()
 	TCCR0B |= (1 << CS02);
 	TCNT0 = 0;
 	TIMSK0 |= (1 << TOIE0);
-	tot_overflow = 0;
+	overflow = 0;
 }
 
 // Gets the snapshot value of the fifth poll
